@@ -125,7 +125,7 @@ export default function Index() {
         )}
 
         {newTodoVisible && (
-          <div className="mb-8 bg-white shadow-md rounded-2xl px-8 pt-6 pb-8 mb-4">
+          <div className="mb-8 bg-white shadow-md rounded-2xl px-8 pt-6 pb-8">
             <Form method="post" className="space-y-4">
               <div>
                 <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="title">
