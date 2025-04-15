@@ -3,10 +3,15 @@ import { json, redirect } from "@remix-run/node";
 import { useState } from "react";
 
 const API_BASE_URL = "http://127.0.0.1:8000";
+const API_KEY = "378701c9-ac65-4f2e-9f68-c8ddb8081aed"
 
 export const loader = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/todos/`);
+    const response = await fetch(`${API_BASE_URL}/todos/`, {
+      headers: {
+        "x-api-key": API_KEY
+      }
+    });
     
     if (!response.ok) {
       if (response.status === 404) {
@@ -39,6 +44,7 @@ export const action = async ({ request }) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-api-key": API_KEY
         },
         body: JSON.stringify({
           title,
@@ -63,6 +69,7 @@ export const action = async ({ request }) => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          "x-api-key": API_KEY
         },
         body: JSON.stringify({
           id: Number(id),
@@ -83,6 +90,9 @@ export const action = async ({ request }) => {
       
       const response = await fetch(`${API_BASE_URL}/todos/${id}`, {
         method: "DELETE",
+        headers: {
+          "x-api-key": API_KEY
+        }
       });
       
       if (!response.ok) {

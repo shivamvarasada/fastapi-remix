@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Header
 from sqlmodel import SQLModel, Field, create_engine, Session, select
 import setting
 from typing import Annotated
@@ -31,20 +31,23 @@ async def lifespan(app: FastAPI):
 app: FastAPI = FastAPI(
     lifespan=lifespan, title="Todo", version='1.0.0')
 
+# API Key
+async def api_key_auth(x_api_key: str = Header(...)):
+    if str(x_api_key) != str(setting.API_KEY):
+        raise HTTPException(status_code=401, detail="Invalid or missing API Key")
+
 @app.get('/')
 async def root():
-    return {"message": "Welcome to dailyDo todo app"}
+    return {"message": "Welcome to Todo app"}
 
-
-@app.post('/todos/', response_model=Todo)
+@app.post('/todos/', response_model=Todo, dependencies=[Depends(api_key_auth)])
 async def create_todo(todo: Todo, session: Annotated[Session, Depends(get_session)]):
     session.add(todo)
     session.commit()
     session.refresh(todo)
     return todo
 
-
-@app.get('/todos/', response_model=list[Todo])
+@app.get('/todos/', response_model=list[Todo], dependencies=[Depends(api_key_auth)])
 async def get_all(session: Annotated[Session, Depends(get_session)]):
     todos = session.exec(select(Todo)).all()
     if todos:
@@ -52,7 +55,7 @@ async def get_all(session: Annotated[Session, Depends(get_session)]):
     else:
         raise HTTPException(status_code=404, detail="No Task found")
 
-@app.get('/todos/{id}', response_model=Todo)
+@app.get('/todos/{id}', response_model=Todo, dependencies=[Depends(api_key_auth)])
 async def get_single_todo(id: int, session: Annotated[Session, Depends(get_session)]):
     todo = session.exec(select(Todo).where(Todo.id == id)).first()
     if todo:
@@ -60,7 +63,7 @@ async def get_single_todo(id: int, session: Annotated[Session, Depends(get_sessi
     else:
         raise HTTPException(status_code=404, detail="No Task found")
 
-@app.put('/todos/{id}')
+@app.put('/todos/{id}', dependencies=[Depends(api_key_auth)])
 async def edit_todo(id: int, todo: Todo, session: Annotated[Session, Depends(get_session)]):
     existing_todo = session.exec(select(Todo).where(Todo.id == id)).first()
     if existing_todo:
@@ -74,15 +77,12 @@ async def edit_todo(id: int, todo: Todo, session: Annotated[Session, Depends(get
     else:
         raise HTTPException(status_code=404, detail="No task found")
 
-
-@app.delete('/todos/{id}')
+@app.delete('/todos/{id}', dependencies=[Depends(api_key_auth)])
 async def delete_todo(id: int, session: Annotated[Session, Depends(get_session)]):
     todo = session.exec(select(Todo).where(Todo.id == id)).first()
-    # todo = session.get(Todo,id)
     if todo:
         session.delete(todo)
         session.commit()
-        # session.refresh(todo)
         return {"message": "Task successfully deleted"}
     else:
         raise HTTPException(status_code=404, detail="No task found")
